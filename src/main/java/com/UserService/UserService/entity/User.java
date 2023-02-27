@@ -3,6 +3,7 @@ package com.UserService.UserService.entity;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.List;
 
 
 @Entity
@@ -29,6 +30,11 @@ public class User implements Serializable {
 
     @Column
     private Boolean active=true;
+
+    @ManyToMany(fetch =FetchType.LAZY)
+    private List<Role> roleList;
+
+    private static final long serialVersionUID = -6702360514758892391L;
 
     public long getId() {
         return id;

@@ -1,6 +1,6 @@
 package com.UserService.UserService.service;
 
-import com.UserService.UserService.activeMQ.Receive;
+import brave.Tracer;
 import com.UserService.UserService.dao.UserDao;
 import com.UserService.UserService.entity.User;
 import jakarta.jms.JMSException;
@@ -17,7 +17,7 @@ import org.springframework.jms.core.MessageCreator;
 import org.springframework.stereotype.Service;
 
 
-import java.io.FileReader;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +30,9 @@ public class ServiceImplementUser implements ServiceUser {
 
     @Autowired
     private JmsTemplate jmsTemplate;
+
+    @Autowired
+    private Tracer tracer;
 
     @Value("${queue.example}")
     private String  userQueue;
@@ -57,12 +60,15 @@ public class ServiceImplementUser implements ServiceUser {
         try {
             Optional<User> user = userDao.findById(id);
             if(user.isPresent() && user.get().getActive()==true){
+                tracer.currentSpan().tag("user find","HttpStatus.ACCEPTED");
                 return new ResponseEntity(user, HttpStatus.ACCEPTED) ;
             }
+            tracer.currentSpan().tag("he user does not exist","HttpStatus.BAD_REQUEST");
             return new ResponseEntity("The user does not exist", HttpStatus.BAD_REQUEST) ;
 
         }catch (Exception e){
             System.out.println("Exception"+e);
+            tracer.currentSpan().tag("Something go bad","HttpStatus.BAD_REQUEST");
             return new ResponseEntity("Something go bad", HttpStatus.BAD_REQUEST) ;
         }
 
@@ -76,12 +82,15 @@ public class ServiceImplementUser implements ServiceUser {
 
                 user.get().setActive(false);
                 userDao.save(user.get());
+                tracer.currentSpan().tag("user created","HttpStatus.ACCEPTED");
               return new ResponseEntity (user, HttpStatus.ACCEPTED);
             }
+            tracer.currentSpan().tag("cannot disable the user","HttpStatus.ACCEPTED");
             return new ResponseEntity ("cannot disable the user", HttpStatus.BAD_REQUEST);
 
         }catch (Exception e){
             System.out.println("Exception: "+e);
+            tracer.currentSpan().tag("something go bad","HttpStatus.ACCEPTED");
             return new ResponseEntity ("something go bad", HttpStatus.BAD_REQUEST);
         }
 
@@ -95,9 +104,11 @@ public class ServiceImplementUser implements ServiceUser {
 
                  return true;
              }
+             tracer.currentSpan().tag("could not find the User","HttpStatus.ACCEPTED");
              throw new RuntimeException("could not find the User");
 
          }catch (Exception e){
+             tracer.currentSpan().tag("could not find the User",e.toString());
              System.out.println("Exception: "+e);
              return false;
          }
@@ -127,18 +138,41 @@ public class ServiceImplementUser implements ServiceUser {
                        }
                    });
 
-                   return new ResponseEntity("User Created", HttpStatus.ACCEPTED);
+                  Boolean savedCorrect = saveUser(user);
+                  if(savedCorrect){
+                      tracer.currentSpan().tag("User Created","HttpStatus.ACCEPTED");
+                      return new ResponseEntity(user, HttpStatus.ACCEPTED);
+                  }
+                   tracer.currentSpan().tag("user not saved","HttpStatus.BAD_REQUEST");
+                   return new ResponseEntity("user not saved", HttpStatus.BAD_REQUEST);
                }
+                tracer.currentSpan().tag("dni must be 7-8 numbers","HttpStatus.BAD_REQUEST");
                 return new ResponseEntity("dni must be 7-8 numbers", HttpStatus.BAD_REQUEST);
             }
+            tracer.currentSpan().tag("Name or secondName not valid","HttpStatus.BAD_REQUEST");
             return new ResponseEntity("Name or secondName not valid", HttpStatus.BAD_REQUEST);
         }catch(NumberFormatException n){
+            tracer.currentSpan().tag("the dni must be numeric - ",n.toString());
             return new ResponseEntity("the dni must be numeric", HttpStatus.BAD_REQUEST);
 
         }catch (Exception e){
             System.out.println("Exception: "+e);
+            tracer.currentSpan().tag("the dni must be numeric - ",e.toString());
             return new ResponseEntity("something go bad", HttpStatus.BAD_REQUEST);
         }
+
+
+    }
+    private Boolean saveUser(User user){
+       try{
+           user.deleteId();
+           userDao.save(user);
+           return true;
+
+       }catch (Exception e){
+           System.out.println("Exception: "+e);
+           return false;
+       }
 
 
     }
