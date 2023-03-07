@@ -74,6 +74,26 @@ public class ServiceImplementUser implements ServiceUser {
 
     }
 
+    public User findByName(String name) {
+
+        try {
+            Optional<User> user =  Optional.ofNullable(userDao.findByName(name)) ;
+            if(user.isPresent() && user.get().getActive()==true){
+
+                tracer.currentSpan().tag("user find","HttpStatus.ACCEPTED");
+                System.out.println("USUARIO: "+user.toString() );
+                return user.get() ;
+            }
+            tracer.currentSpan().tag("he user does not exist","HttpStatus.BAD_REQUEST");
+            return null ;
+
+        }catch (Exception e){
+            System.out.println("Exception"+e);
+            tracer.currentSpan().tag("Something go bad","HttpStatus.BAD_REQUEST");
+            return null ;
+        }
+
+    }
     @Override
     public ResponseEntity disable(Long id) {
         try {

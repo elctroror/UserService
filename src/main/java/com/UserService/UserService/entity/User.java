@@ -3,6 +3,7 @@ package com.UserService.UserService.entity;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -29,10 +30,38 @@ public class User implements Serializable {
     private String pass;
 
     @Column
-    private Boolean active=true;
+    private Boolean active = true;
 
-    @ManyToMany(fetch =FetchType.LAZY)
-    private List<Role> roleList;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "users_roles_list", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"), uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "role_id"})})
+    private List<Role> roleList = new ArrayList<>();
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public List<Role> getRoleList() {
+        return roleList;
+    }
+
+    public void setRoleList(List<Role> roleList) {
+        this.roleList = roleList;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", secondName='" + secondName + '\'' +
+                ", dni='" + dni + '\'' +
+                ", email='" + email + '\'' +
+                ", pass='" + pass + '\'' +
+                ", active=" + active +
+                ", roleList=" + roleList +
+                '}';
+    }
 
     private static final long serialVersionUID = -6702360514758892391L;
 
@@ -97,30 +126,30 @@ public class User implements Serializable {
     }
 
 
+    public User() {
+    }
 
-    public User(){}
-    public User(String name, String secondName, String dni, String email, String pass ){
+    public User(String name, String secondName, String dni, String email, String pass) {
 
-       this.name=name;
-       this.secondName=secondName;
-       this.dni=dni;
-       this.email=email;
-       this.pass=pass;
-
-
-   }
-
-    public User(Long id,String name, String secondName, String dni, String email, String pass ){
-        this.id=id;
-        this.name=name;
-        this.secondName=secondName;
-        this.dni=dni;
-        this.email=email;
-        this.pass=pass;
+        this.name = name;
+        this.secondName = secondName;
+        this.dni = dni;
+        this.email = email;
+        this.pass = pass;
 
 
     }
 
+    public User(Long id, String name, String secondName, String dni, String email, String pass) {
+        this.id = id;
+        this.name = name;
+        this.secondName = secondName;
+        this.dni = dni;
+        this.email = email;
+        this.pass = pass;
+
+
+    }
 
 
 }

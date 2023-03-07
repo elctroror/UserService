@@ -4,12 +4,13 @@ import com.UserService.UserService.entity.User;
 import com.UserService.UserService.service.ServiceImplementUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping()
+@RequestMapping("/user")
 public class ControllerUser {
 
     @Autowired
@@ -26,8 +27,14 @@ public class ControllerUser {
         return serviceUser.findById(id);
     }
 
+    @GetMapping("/listName/{name}")
+    public User nameList(@PathVariable String name){
+
+        return serviceUser.findByName(name);
+    }
     @GetMapping("/findActive/{id}")
     public Boolean findActive(@PathVariable Long id){
+
         return serviceUser.findActive(id);
     }
 
